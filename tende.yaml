@@ -1,0 +1,115 @@
+esphome:
+  name: tende_balcone
+  platform: ESP32
+  board: pico32
+  #  platform: ESP8266
+  #board: nodemcuv2 
+wifi:
+  ssid: !secret SSID
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Led Strip 1 Fallback Hotspot"
+    password: !secret wifi_password 
+
+captive_portal:
+
+# Enable logging
+logger:
+
+    # Sync time with Home Assistant.
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+#global variables used to customize the sensor                  
+sensor:
+      - platform: wifi_signal
+        name: "WiFi Signal Sensor"
+        update_interval: 60s
+      - platform: uptime
+        name: "Uptime"
+
+switch:
+  - platform: gpio
+    pin: GPIO2
+    name: "Tenda sinistra scende"
+    id: sx_scende
+    restore_mode: ALWAYS_OFF
+    #    interlock: [sx_sale]
+  - platform: gpio
+    pin: GPIO4
+    name: "Tenda sinistra sale"
+    id: sx_sale
+    #interlock: [sx_scende]
+    restore_mode: ALWAYS_OFF
+  - platform: gpio
+    pin: GPIO12
+    name: "Tenda destra scende"
+    id: dx_scende
+    restore_mode: ALWAYS_OFF
+  - platform: gpio
+    pin: GPIO14
+    name: "Tenda destra sale"
+    id: dx_sale
+    restore_mode: ALWAYS_OFF
+
+  - platform: restart
+    name: "ESP32 Restart"
+
+cover:
+  - platform: template
+    name: "Tenda Sinistra"
+    open_action:
+      # Cancel any previous action
+      - switch.turn_off: sx_scende
+      # Turn the OPEN switch on briefly
+      - switch.turn_on: sx_sale
+      - delay: 0.08s
+      - switch.turn_off: sx_sale
+    close_action:
+      - switch.turn_off: sx_sale
+      - switch.turn_on: sx_scende
+      - delay: 0.08s
+      - switch.turn_off: sx_scende
+    stop_action:
+      - switch.turn_off: sx_sale
+      - switch.turn_off: sx_scende
+    optimistic: true
+    assumed_state: true
+  - platform: template
+    name: "Tenda Destra"
+    open_action:
+      # Cancel any previous action
+      - switch.turn_off: dx_scende
+      # Turn the OPEN switch on briefly
+      - switch.turn_on: dx_sale
+      - delay: 0.08s
+      - switch.turn_off: dx_sale
+    close_action:
+      - switch.turn_off: dx_sale
+      - switch.turn_on: dx_scende
+      - delay: 0.08s
+      - switch.turn_off: dx_scende
+    stop_action:
+      - switch.turn_off: dx_sale
+      - switch.turn_off: dx_scende
+    optimistic: true
+    assumed_state: true
+
+
+
+
+
+# Enable Home Assistant API
+api:
+     password: !secret api_password
+
+ota:
+     safe_mode: True
+     password: !secret ota_password
+
+web_server:
+  port: 80
+
